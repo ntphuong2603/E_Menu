@@ -1,109 +1,101 @@
-import dbConnection from "../database/dbConnection.js";
 import BaseController from "./base_controller.js";
 import categorySchema from "../database/models/category_model.js";
 
-export default class CategoryController {
-    constructor(){
-        this.baseController = new BaseController('Category', categorySchema)
-        this.connection = null
+export default () => {
+    const baseController = new BaseController('Category', categorySchema)
+
+    const isCategoryNameExisted = async (categoryName) => {
+        const category = await baseController.getData(baseController.getOneByCriteria, { name : categoryName })
+        return !!category
     }
 
-    getConnection = () => {
-        if (this.connection === null){
-            this.connection = dbConnection()
+    const checkingID = (categoryID) => {
+        if (categoryID === undefined || categoryID.length === 0) {
+            baseController.responseError(res, 400, 'Length of category ID must be validated')
+            return false
         }
-        return dbConnection()
+        return true
     }
 
-    isCategoryNameExisted = async (categoryName) => {
-        this.getConnection()
-        const isExisted = await this.baseController.getModel().checkCategoryName(categoryName)
-        return isExisted
-    }
+    return {
+        async getAll (req, res) {
+            await baseController.responseData(res, baseController.getAll, {})
+        },
 
-    getOneByID = async (id) => {
-        this.getConnection()
-        const { data } = await this.baseController.getOneByID(id)
-        return data
-    }
-
-    getData = async (res, func, data) => {
-        const connection_on = this.getConnection()
-        try{
-            console.log('func getData: ', func);
-            const connection_on = dbConnection()
-            const { code, ...rest} = await func(data)
-            connection_on.close()
-            res.status(code).json(rest)
-        } catch (error){
-            console.log('Error - Category controller: ', error);
-        } finally {
-            connection_on.close()
-        }
-    } 
-
-    getAll  = async (req, res) => {
-        await this.getData(res, this.baseController.getAll, {})
-    }
-
-    getOneByName = async (req, res) => {
-        await this.getData(res, this.baseController.getOneByCriteria, {name: req.body.name})
-    }
-
-    create = async (req, res) => {
-        const categoryData = {
-            name: req.body.name,
-            desc: req.body.desc
-        }
-        if (await this.isCategoryNameExisted(categoryData.name)){
-            this.getData(res, () => ({
-                code: 250, data:{}, 
-                msg:'This category name already existed in the system, pls check again!!!'
-            }),{})
-        } else { 
-            await this.getData(res, this.baseController.create, categoryData)
-        }
-    }
-
-    update = async (req, res) => {
-        let isNameChangedAndExisted = false
-        const category = await this.getOneByID(req.body.id)
-        if (req.body.desc !== undefined){
-            category.desc = req.body.desc
-            category.info = {
-                ...category.info,
-                updateOn: Date.now()
+        async getOneByName (req, res) {
+            const categoryName = req.body.name
+            if (categoryName === undefined || categoryName.length === 0) {
+                baseController.responseError(res, 400, 'Length of category name must be greater than 0')
+                return
             }
-        }
-        if (req.body.name !== undefined){
-            if (await this.isCategoryNameExisted(req.body.name)){
-                this.getData(res, ()=>({code: 250, data:{}, msg:'This category name already existed in the system, pls check again!!!'}),{})
-                isNameChangedAndExisted = true
-            } else {
-                category.name = req.body.name
+            await baseController.responseData(res, baseController.getOneByCriteria, { name: req.body.name })
+        },
+
+        async getOneByID (req, res) {
+            const categoryID = req.body.id
+            if (checkingID(categoryID)) await baseController.responseData(res, baseController.getOneByID, categoryID)
+        },
+
+        async create (req, res) {
+            const categoryData = { name: req.body.name, desc: req.body.desc }
+            if (await isCategoryNameExisted(categoryData.name)){
+                baseController.responseError(res, 250, 'Category name already existed in the system, pls check again!!!')
+            } else { 
+                await baseController.responseData(res, baseController.create, categoryData)
+            }
+        },
+
+        async update (req, res) {
+            const newCategory = {id: req.body.id, name: req.body.name, desc: req.body.desc}
+            // console.log('newCategory:', newCategory)
+            if (checkingID(newCategory.id)) {
+                const category = await baseController.getData(baseController.getOneByID, newCategory.id)
+                // console.log('oldCategory:', category)
+                if (newCategory.desc !== undefined){
+                    category.desc = newCategory.desc
+                    category.info = {
+                        ...category.info,
+                        updateOn: Date.now()
+                    }
+                }
+                
+                if (newCategory.name !== undefined){
+                    if (await isCategoryNameExisted(newCategory.name)){
+                        baseController.responseError(res, 250,'This category name already existed in the system, pls check again!!!')
+                        return
+                    } else {
+                        category.name = newCategory.name
+                        category.info = {
+                            ...category.info,
+                            updateOn: Date.now()
+                        }
+                    }
+                } 
+
+                const {_id, ...rest} = category
+                await baseController.responseData(res, baseController.update, {id:_id, newData: rest})
+            }
+        },    
+        
+        async delete (req, res) {
+            const categoryID = req.body.id
+
+            if (checkingID(categoryID)){
+                const category = await baseController.getData(baseController.getOneByID, categoryID)
                 category.info = {
                     ...category.info,
-                    updateOn: Date.now()
+                    isDelete: true,
+                    isActive: false,
+                    deleteOn: Date.now()
                 }
+                const {_id, ...rest} = category
+                await baseController.responseData(res, baseController.update, {id: _id, newData: rest})
             }
-        } 
-        const {_id, ...rest} = category
-        if (!isNameChangedAndExisted) this.getData(res, this.baseController.update, {id: _id, newData: rest})
-    }
+        },
 
-    delete = async (req, res) => {
-        const category = await this.getOneByID(req.body.id)
-        category.info = {
-            ...category.info,
-            isDelete: true,
-            isActive: false,
-            deleteOn: Date.now()
+        async dropOneByID (req, res) {
+            const categoryID = req.body.id
+            if (checkingID(categoryID)) await baseController.responseData(res, baseController.delete, categoryID)
         }
-        const {_id, ...rest} = category
-        await this.getData(res, this.baseController.update, {id: _id, newData: rest})
-    }
-
-    dropOneByID = async (req, res) => {
-        await this.getData(res, this.baseController.delete, req.body.id)
     }
 }

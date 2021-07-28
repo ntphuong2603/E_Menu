@@ -1,20 +1,13 @@
 import { Router } from 'express'
-import CategoryController from '../controllers/category_ctr.js'
+import category_ctr from '../controllers/category_ctr.js'
 
-// const category_api = express.Router()
-const controller = new CategoryController()
-
-// category_api
-//     .get('/getAll', controller.getAll)
-//     .get('/getOneCritera', controller.getOneByCriteria)
-//     .post('/create', controller.create)
-
-// export default category_api
+const controller = category_ctr()
 
 export default Router()
     .get('/getAll', controller.getAll)
     .get('/getOneByName', controller.getOneByName)
+    .get('/getOneByID', controller.getOneByID)
     .post('/create', controller.create)
-    .post('/update', controller.update)
     .post('/delete', controller.delete)
+    .post('/update', controller.update)
     .post('/dropOneByID', controller.dropOneByID)

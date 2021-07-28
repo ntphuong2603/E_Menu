@@ -12,24 +12,24 @@ const options = {
     useFindAndModify: false,
 }
 
-export default function(){
-    mongoose.connect(db_uri, {...options})
+export default async function(){
+    await mongoose.connect(db_uri, {...options})
 
-    mongoose.connection.on('connected', () => {
-        console.log(`Mongoose default connection is open to ${db_uri}`)
-    })
+    // mongoose.connection.on('connected', () => {
+    //     console.log(`Mongoose default connection is open to ${db_uri}`)
+    // })
 
     mongoose.connection.on('error', (err)=>{
         console.log(`Mongoose default connection has occured ${err} error`)
     })
 
-    mongoose.connection.on('disconnected', ()=>{
-        console.log("Mongoose default connection is disconnected")
-    })
+    // mongoose.connection.on('disconnected', ()=>{
+    //     console.log("Mongoose default connection is disconnected")
+    // })
 
     process.on('SIGINT', () => {
         mongoose.connection.close(()=>{
-            console.log('Mongoose default connection is disconnected due to application termination')
+            // console.log('Mongoose default connection is disconnected due to application termination')
             process.exit(0)
         })
     })
