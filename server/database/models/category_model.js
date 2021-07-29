@@ -5,7 +5,9 @@ const categorySchema = mongoose.Schema({
     name:{
         type: String,
         require: true,
-        unique: true,
+        index: {
+            unique: true,
+        }
     },
     desc:{
         type: String,

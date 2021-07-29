@@ -1,85 +1,107 @@
 import userSchema from "../database/models/user_model.js";
 import BaseController from "./base_controller.js";
+import dotenv from 'dotenv'
 
 export default () => {
+    dotenv.config()
+
     const baseController = new BaseController('User', userSchema)
 
-    const getData = async (res, func, data) => {
-        let connection_on = null
-        try{
-            connection_on = baseController.getConnection()
-            const { code, ...rest} = await func(data)
-            res.status(code).json(rest)
-        } catch (error){
-            console.log('Error - User controller: ', error);
-        } finally {
-            if (connection_on !== null) connection_on.close()
-        }
+    const isUsernameExisted = async (username) => {
+        const category = await baseController.getData(baseController.getOneByCriteria, { username : username })
+        return !!category
     }
 
-    const isUsernameExisted = async (username) => {
-        baseController.getConnection()
-        const isExisted = await baseController.getModel().checkUsername(username)
-        return isExisted
+    const checkingID = (categoryID) => {
+        if (categoryID === undefined || categoryID.length === 0) {
+            baseController.responseError(res, 400, 'Length of category ID must be validated')
+            return false
+        }
+        return true
     }
 
     return {
-        async getAll (req, res) {
-            await getData(res, baseController.getAll, {})
+        async getAllUsers (req, res) {
+            await baseController.responseData(res, baseController.getAll, {})
         },
 
-        async getOneByUsername (req, res) {
-            await getData(res, baseController.getOneByCriteria, {username: req.body.username})
+        async getUserByUsername(req, res) {
+            const username = req.body.username
+            if (username === undefined || username.length === 0) {
+                baseController.responseError(res, 400, 'Length of username must be greater than 0')
+                return
+            }
+            await baseController.responseData(res, baseController.getOneByCriteria, { username: username })
         },
 
-        async getOneByID (req, res) {
-            await getData(res, baseController.getOneByCriteria, {_id: req.body.id})
+        async getUserByID (req, res) {
+            const userID = req.body.id
+            if (checkingID(userID)) await baseController.responseData(res, baseController.getOneByID, userID)
         },
 
         async create (req, res) {
-            const userData = { username: req.body.name, password: req.body.desc }
+            const userData = { 
+                username: req.body.username, 
+                password: req.body.password,
+            }
+            
             if (await isUsernameExisted(userData.username)){
-                getData(res, () => ({
-                    code: 250, data:{}, 
-                    msg:'Username already existed in the system, pls check again!!!'
-                }),{})
+                baseController.responseError(res, 250, 'Username already existed in the system, pls check again!!!')
             } else { 
-                await getData(res, baseController.create, userData)
+                await baseController.responseData(res, baseController.create, userData)
             }
         },
 
-        async update (req, res) {
-            let isNameChangedAndExisted = false
-
-            const user = await baseController.getOneByCriteria({_id: req.body.id})
-
-            if (req.body.password !== undefined){
-                user.desc = req.body.password
-                user.info = {
-                    ...user.info,
-                    updateOn: Date.now()
-                }
+        async userLogin (req, res) {
+            const userData = { username: req.body.username, password: req.body.password }
+            const user = await baseController.getData(baseController.getOneByCriteria, { username : userData.username })
+            if (!user.checkPassword(userData.password)){
+                baseController.responseError(res, 400, 'Username or Password is incorrected.')
+            } else {
+                baseController.responseData(res, null, {token: user.generateToken()}, 'User login successfully!!!')
             }
 
-            if (req.body.username !== undefined){
-                if (await isCategoryNameExisted(req.body.username)){
-                    this.getData(res, ()=>({code: 250, data:{}, msg:'This category name already existed in the system, pls check again!!!'}),{})
-                    isNameChangedAndExisted = true
-                } else {
-                    user.username = req.body.username
-                    user.info = {
-                        ...user.info,
-                        updateOn: Date.now()
-                    }
-                }
-            } 
+        },
 
-            const {_id, ...rest} = user
-            if (!isNameChangedAndExisted) this.getData(res, this.baseController.update, {id: _id, newData: rest})
+        async changePassword (req, res) {
+            const userData = {
+                token: req.body.token,
+                oldPass: req.body.oldPass, 
+                newPass: req.body.newPass
+            }
+            const userInfo = res.locals.userInfo
+            if (userInfo !== (null || undefined)){
+                const user = await baseController.getData(baseController.getOneByID, userInfo.id)
+                if (user.checkPassword(userData.oldPass)){
+                    user.setNewPassword(userData.newPass)
+                    user.info.updateOn = Date.now()
+                    const {_id, ...rest} = user
+                    await baseController.responseData(res,  baseController.update, {id: _id, newData: rest})
+                    return
+                }
+            }
+            baseController.responseData(res, null, userData)
         },    
         
-        async delete (req, res) {
-            await getData(res, this.baseController.delete, req.body.id)
-        }
+        // async delete (req, res) {
+        //     const userInfo = res.locals.userInfo
+
+        //     if (checkingID(categoryID)){
+        //         const category = await baseController.getData(baseController.getOneByID, categoryID)
+        //         category.info = {
+        //             ...category.info,
+        //             isDelete: true,
+        //             isActive: false,
+        //             deleteOn: Date.now()
+        //         }
+        //         const {_id, ...rest} = category
+        //         await baseController.responseData(res, baseController.update, {id: _id, newData: rest})
+        //     }
+        // },
+
+        // async dropUserByID (req, res) {
+        //     const userID = req.body.id
+        //     if (checkingID(userID)) await baseController.responseData(res, baseController.delete, userID)
+        // }
     }
 }

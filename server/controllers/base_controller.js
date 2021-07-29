@@ -50,12 +50,17 @@ export default class BaseController {
         }
     }
 
-    async responseData (res, func, data) {
+    async responseData (res, func = null, data, msg = '') {
         try{
-            await this.#openConnection()
-            const { code, ...rest} = await func(data)
-            // console.log('Data:', rest);
-            res.status(code).json(rest)
+            if (func === null){
+                res.status(200).json({data:data, msg:msg})
+            } else {
+                await this.#openConnection()
+                console.log('Func:', func);
+                const { code, ...rest} = await func(data)
+                // console.log('Data:', rest);
+                res.status(code).json(rest)
+            }
         } catch (error){
             console.log('Error - Category controller: ', error);
         } finally {
