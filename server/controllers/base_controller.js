@@ -35,10 +35,6 @@ export default class BaseController {
         return this.#connection
     }
 
-    responseError (res, code, msg) {
-        res.status(code).json({msg: msg})
-    }
-
     async getData (func, data) {
         try{
             await this.#openConnection()
@@ -50,15 +46,13 @@ export default class BaseController {
         }
     }
 
-    async responseData (res, func = null, data, msg = '') {
+    async responseData (res, func = null, data = {}, msg = '') {
         try{
             if (func === null){
                 res.status(200).json({data:data, msg:msg})
             } else {
                 await this.#openConnection()
-                console.log('Func:', func);
                 const { code, ...rest} = await func(data)
-                // console.log('Data:', rest);
                 res.status(code).json(rest)
             }
         } catch (error){
@@ -66,6 +60,10 @@ export default class BaseController {
         } finally {
             await this.#closeConnection()
         }
+    }
+
+    responseError (res, code, msg) {
+        res.status(code).json({msg: msg})
     }
 
     getAll = async () => {
@@ -132,4 +130,5 @@ export default class BaseController {
             return this.#result 
         }
     }
+
 }

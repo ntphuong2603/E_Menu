@@ -18,6 +18,11 @@ const userSchema = mongoose.Schema({
         type: String,
         require: true,
     },
+    role:{
+        type: String,
+        enum: ['customer','user', 'admin','owner','super'],
+        default: 'user',
+    },
     info: {
         ...general_info
     },
@@ -43,6 +48,7 @@ userSchema.methods.generateToken = function(){
     const userObj = {
         id: user._id.toHexString(),
         username: user.username,
+        role: user.role,
         userInfo: user.info,
     }
     const token = jsonwebtoken.sign(userObj, process.env.JWT_SECRET, { expiresIn: '1h'})
@@ -52,19 +58,5 @@ userSchema.methods.generateToken = function(){
 userSchema.pre('save', function(){
     this.password = bcrypt.hashSync(this.password, bcrypt.genSaltSync(16))
 })
-
-// userSchema.pre('save', function(next){
-//     // const user = this
-//     if (this.isModified('password')){
-//         const salt = bcrypt.genSaltSync(16)
-//         this.password = bcrypt.hashSync(this.password, salt)
-//     }
-//     next()
-//     // this.password = bcrypt.hashSync(this.password, bcrypt.genSalt(16))
-//     // const user = this
-//     // const salt = bcrypt.genSaltSync(16)
-//     // const hash = bcrypt.hashSync(user.password, salt)
-//     // user.password = hash
-// })
 
 export default userSchema

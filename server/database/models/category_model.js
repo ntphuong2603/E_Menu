@@ -18,11 +18,6 @@ const categorySchema = mongoose.Schema({
 })
 
 categorySchema.statics.checkCategoryName = async function(categoryName){
-    // const category = this
-    // const cat = await category.findOne({ name : categoryName})
-    // // console.log('This: ', this);
-    // // console.log('Category name:', cat);
-    // return !!cat
     const cat = await this.findOne({name:categoryName})
     return !!cat
 }

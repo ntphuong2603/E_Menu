@@ -1,36 +1,71 @@
 import AccessControl from 'accesscontrol'
 
+// const CRUD_Own = {
+//     'create:own':['*'],
+//     'update:own':['*'],
+//     'delete:own':['*'],
+//     'read:own':['*'],
+// }
+
+// const CRUD_Any = {
+//     'create:any':['*'],
+//     'update:any':['*'],
+//     'delete:any':['*'],
+//     'read:any':['*'],
+// }
+
 const roles = new AccessControl({
+    customer:{
+        user:{
+            'create:own':['*'],
+            'update:own':['*'],
+            'delete:own':['*'],
+            'read:own':['*'],
+        },
+        category:{
+            'read:any':['*'],
+        },
+    },
+
     user:{
-        profile:{
+        user:{
             'read:own':['*','!password'],
             'update:own':['*'],
-        }
+            'read:own':['*']
+        },
+        category:{
+            'read:any':['*'],
+        },
     },
+
     admin:{
         category:{
             'create:any':['*'],
-            'read:any':['*'],
             'update:any':['*'],
             'delete:any':['*'],
+            'read:any':['*'],
         },
-        profile:{
+        user:{
             'create:any':['*'],
             'read:any':['*','!password'],
             'update:any':['*'],
-            'delete:any':['*'],
-        }
+        },
     },
-    // owner:{
-    //     'create:user':['*'],
-    //     'read:any':['*','!password'],
-    //     'update:any':['*'],
-    //     'delete:any':['*'],
-    //     'drop:any':['*'],
-    // },
-    // super:{
-    //     'create:owner':['*'],
-    // },
+
+    owner:{
+        user:{
+            'create:any':['admin'],
+            'delete:any':['admin']
+        },
+    },
+
+    super:{
+        user:{
+            'create:any':['owner'],
+            'delete:any':['owner']
+        }
+    }
+
 })
 
 export default () => {
@@ -38,12 +73,15 @@ export default () => {
         grantAccess (action, resource) {
             return (req, res, next) => {
                 try {
-                    const permission = roles.can(res.locals.userInfo.role)[action](resource)
-                    if (!permission.granted){
-                        res.locals.permission = false
-                    } else  {
-                        res.locals.permission = permission
-                    }
+                    const userInfo = res.locals.userInfo
+                    // let permission = null
+                    // if (userInfo === undefined) {
+                    //     permission = roles.can('customer')[action](resource)
+                    // } else {
+                    //     permission = roles.can(userInfo.role)[action](resource)
+                    // }
+                    const permission = roles.can(userInfo.role)[action](resource)
+                    res.locals.permission = permission.granted
                 } catch (error){
                     console.log('Error:', error);
                 } finally {
@@ -52,60 +90,36 @@ export default () => {
             }
         },
 
-        ACTION : {
-            OWN : {
-                READ: 'read_own',
-                UPDATE: 'update_own',
+        actions : {
+            create:{
+                any:'createAny',
+                own:'createOwn'
             },
-            ANY : {
-                CREATE: 'create_any',
-                READ: 'read_any',
-                UPDATE: 'update_any',
-                DELETE: 'delete_any',
-                DROP: 'drop_any'
-            }
+            update:{
+                any:'updateAny',
+                own:'updateOwn'
+            },
+            read:{
+                any:'readAny',
+                own:'readOwn'
+            },
+            delete:{
+                any:'deleteAny',
+                own:'deleteOwn'
+            },
         },
 
-        RESOURCE : {
-            CATEGORY : 'category',
-            USER : 'user',
-        }
+        resource : {
+            category : 'category',
+            user : 'user',
+        },
 
+        roles: {
+            customer:'customer',
+            user:'user',
+            admin: 'admin',
+            owner: 'owner',
+            super: 'super',
+        }
     }
 }
-
-// exports.grantAccess = function (action, resource) {
-//     return (req, res, next) => {
-//         try {
-//             const permission = roles.can(req.user.role)[action](resource)
-//             if (!permission.granted){
-//                 res.locals.permission = false
-//             } else  {
-//                 res.locals.permission = permission
-//             }
-//         } catch (error){
-//             console.log('Error:', error);
-//         } finally {
-//             next()
-//         }
-//     }
-// }
-
-// exports.ACTION = {
-//     OWN : {
-//         READ: 'read_own',
-//         UPDATE: 'update_own',
-//     },
-//     ANY : {
-//         CREATE: 'create_any',
-//         READ: 'read_any',
-//         UPDATE: 'update_any',
-//         DELETE: 'delete_any',
-//         DROP: 'drop_any'
-//     }
-// }
-
-// exports.RESOURCE = {
-//     CATEGORY : 'category',
-//     USER : 'user',
-// }

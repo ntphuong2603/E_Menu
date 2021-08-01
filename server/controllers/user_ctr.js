@@ -1,6 +1,7 @@
 import userSchema from "../database/models/user_model.js";
 import BaseController from "./base_controller.js";
 import dotenv from 'dotenv'
+import userRoles from "../middlewares/userRoles.js";
 
 export default () => {
     dotenv.config()
@@ -20,9 +21,23 @@ export default () => {
         return true
     }
 
+    const getRole = (role) => {
+        const roles = userRoles().roles
+
+        if (role === roles.customer) return role
+        if (role === roles.super) return roles.owner
+        if (role === roles.owner) return roles.admin
+
+        return roles.user
+    }
+
     return {
         async getAllUsers (req, res) {
-            await baseController.responseData(res, baseController.getAll, {})
+            if (res.locals.permission){
+                await baseController.responseData(res, baseController.getAll, {})
+            } else {
+                baseController.responseError(res, 250, 'Permission to view all users was deneied.')
+            }
         },
 
         async getUserByUsername(req, res) {
@@ -40,16 +55,33 @@ export default () => {
         },
 
         async create (req, res) {
-            const userData = { 
-                username: req.body.username, 
-                password: req.body.password,
+            const userData = { username: req.body.username, password: req.body.password }
+
+            if (!res.locals.permission){
+                baseController.responseError(res, 250, 'Permission to create new user was deneied.')
+                return
             }
-            
+
             if (await isUsernameExisted(userData.username)){
                 baseController.responseError(res, 250, 'Username already existed in the system, pls check again!!!')
-            } else { 
-                await baseController.responseData(res, baseController.create, userData)
+                return 
+            }  
+
+            userData.role = getRole(res.locals.userInfo.role) 
+
+            await baseController.responseData(res, baseController.create, userData)
+            
+        },
+        // not yet finish update function about user information
+        async update (req, res) {
+            if (!res.locals.permission){
+                baseController.responseError(res, 250, 'Permission to update user info was deneied.')
+                return
             }
+
+            const userData = {}
+
+            await baseController.responseData(res, baseController.update, userData)
         },
 
         async userLogin (req, res) {
@@ -83,25 +115,16 @@ export default () => {
             baseController.responseData(res, null, userData)
         },    
         
-        // async delete (req, res) {
-        //     const userInfo = res.locals.userInfo
+        async dropUserByID (req, res) {
+            
+            if (!res.locals.permission){
+                baseController.responseError(res, 250, 'Permission to delete user was deneied.')
+                return
+            }
 
-        //     if (checkingID(categoryID)){
-        //         const category = await baseController.getData(baseController.getOneByID, categoryID)
-        //         category.info = {
-        //             ...category.info,
-        //             isDelete: true,
-        //             isActive: false,
-        //             deleteOn: Date.now()
-        //         }
-        //         const {_id, ...rest} = category
-        //         await baseController.responseData(res, baseController.update, {id: _id, newData: rest})
-        //     }
-        // },
+            const userID = req.body.id
 
-        // async dropUserByID (req, res) {
-        //     const userID = req.body.id
-        //     if (checkingID(userID)) await baseController.responseData(res, baseController.delete, userID)
-        // }
+            if (checkingID(userID)) await baseController.responseData(res, baseController.delete, userID)
+        }
     }
 }

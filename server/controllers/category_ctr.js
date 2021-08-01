@@ -47,10 +47,8 @@ export default () => {
 
         async update (req, res) {
             const newCategory = {id: req.body.id, name: req.body.name, desc: req.body.desc}
-            // console.log('newCategory:', newCategory)
             if (checkingID(newCategory.id)) {
                 const category = await baseController.getData(baseController.getOneByID, newCategory.id)
-                // console.log('oldCategory:', category)
                 if (newCategory.desc !== undefined){
                     category.desc = newCategory.desc
                     category.info = {
