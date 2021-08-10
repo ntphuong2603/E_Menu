@@ -1,7 +1,7 @@
 import userSchema from "../database/models/user_model.js";
 import BaseController from "./base_controller.js";
 import dotenv from 'dotenv'
-import userRoles from "../middlewares/userRoles.js";
+import userRoles from "../middlewares/userPermission.js";
 
 export default () => {
     dotenv.config()

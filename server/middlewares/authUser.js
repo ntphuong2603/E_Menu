@@ -17,14 +17,6 @@ export default () => {
                 next()
             }
         },
-        checkUsername (req, res, next) {
-            try {
-
-            } catch (error){
-                console.log('Error:', error);
-            } finally {
-                next()
-            }
-        }
+        
     }
 }
