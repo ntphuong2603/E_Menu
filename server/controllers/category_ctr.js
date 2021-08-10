@@ -9,17 +9,9 @@ export default () => {
         return !!category
     }
 
-    const checkingID = (categoryID) => {
-        if (categoryID === undefined || categoryID.length === 0) {
-            baseController.responseError(res, 400, 'Length of category ID must be validated')
-            return false
-        }
-        return true
-    }
-
     return {
         async getAll (req, res) {
-            await baseController.responseData(res, baseController.getAll, {})
+            await baseController.responseData(res, baseController.getAll)
         },
 
         async getOneByName (req, res) {
@@ -33,7 +25,7 @@ export default () => {
 
         async getOneByID (req, res) {
             const categoryID = req.body.id
-            if (checkingID(categoryID)) await baseController.responseData(res, baseController.getOneByID, categoryID)
+            if (baseController.checkingID(res, categoryID)) await baseController.responseData(res, baseController.getOneByID, categoryID)
         },
 
         async create (req, res) {
@@ -47,7 +39,7 @@ export default () => {
 
         async update (req, res) {
             const newCategory = {id: req.body.id, name: req.body.name, desc: req.body.desc}
-            if (checkingID(newCategory.id)) {
+            if (baseController.checkingID(res, newCategory.id)) {
                 const category = await baseController.getData(baseController.getOneByID, newCategory.id)
                 if (newCategory.desc !== undefined){
                     category.desc = newCategory.desc
@@ -78,7 +70,7 @@ export default () => {
         async delete (req, res) {
             const categoryID = req.body.id
 
-            if (checkingID(categoryID)){
+            if (baseController.checkingID(res, categoryID)){
                 const category = await baseController.getData(baseController.getOneByID, categoryID)
                 category.info = {
                     ...category.info,
@@ -93,7 +85,7 @@ export default () => {
 
         async dropOneByID (req, res) {
             const categoryID = req.body.id
-            if (checkingID(categoryID)) await baseController.responseData(res, baseController.delete, categoryID)
+            if (baseController.checkingID(res, categoryID)) await baseController.responseData(res, baseController.delete, categoryID)
         }
     }
 }

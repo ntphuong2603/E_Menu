@@ -40,7 +40,7 @@ export default class BaseController {
             await this.#openConnection()
             return (await func(data)).data
         } catch (error){
-            console.log('Error - Category controller: ', error);
+            console.log('Error - Base controller - getData: ', error);
         } finally {
             await this.#closeConnection()
         }
@@ -56,7 +56,7 @@ export default class BaseController {
                 res.status(code).json(rest)
             }
         } catch (error){
-            console.log('Error - Category controller: ', error);
+            console.log('Error - Base controller - responseData: ', error);
         } finally {
             await this.#closeConnection()
         }
@@ -66,15 +66,35 @@ export default class BaseController {
         res.status(code).json({msg: msg})
     }
 
-    getAll = async () => {
+    checkingID = (res, id) => {
+        if (id === undefined || id.length === 0) {
+            this.responseError(res, 400, 'Length of ID must be validated')
+            return false
+        }
+        return true
+    }
+
+    getAll = async (criteria = {}) => {
         try {
-            this.#result.data = await this.#model.find()
+            this.#result.data = await this.#model.find(criteria)
             this.#result.code = 200
         } catch (error){
             this.#result.msg = error
         } 
         return this.#result
     }
+
+    // getAllByCriteria = async (criteria) => {
+    //     try {
+    //         // console.log('Criteria:', criteria);
+    //         this.#result.data = await this.#model.find({...criteria})
+    //         this.#result.code = 200
+    //     } catch (error){
+    //         this.#result.msg = error
+    //     } finally {
+    //         return this.#result
+    //     }
+    // }
 
     getOneByCriteria = async (criteria) => {
         try {

@@ -5,6 +5,7 @@ const controller = recipe_ctr()
 
 export default Router()
     .get('/getAll', controller.getAll)
+    .get('/getAllByCategory', controller.getAllByCategory)
     .get('/getOneByName', controller.getOneByName)
     .get('/getOneByID', controller.getOneByID)
     .post('/create', controller.create)

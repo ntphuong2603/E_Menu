@@ -2,7 +2,6 @@ import mongoose from 'mongoose'
 import general_info from './general_info.js'
 
 const STATION = ['sushi-bar', 'kitchen - deep fryer', 'kitchen - cooking']
-const SELECTION = ['dine-in','take-out','delivery','skipDishes']
 
 const recipeSchema = mongoose.Schema({
     name:{
@@ -16,14 +15,13 @@ const recipeSchema = mongoose.Schema({
         type: Number,
         require: true,
     },
-    picLocation:[{
-        selection:{
-            type: String,
-            enum: SELECTION,
-            default: SELECTION[0]
-        },
-        picLink: String,
-    }],
+    categoryID:{
+        type: String,
+        require: true,
+    },
+    picLocation:{
+        type: [Object]
+    },
     station:{
         type: [String],
         enum: STATION,
