@@ -1,6 +1,5 @@
 import server from '../server.js'
 import supertest from 'supertest'
-import { it } from '@jest/globals'
 
 const app = supertest(server)
 

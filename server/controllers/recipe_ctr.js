@@ -1,9 +1,9 @@
+import { SELECTION } from "../constants/db_constants.js";
 import recipeSchema from "../database/models/recipe_model.js";
 import BaseController from "./base_controller.js";
 
 export default () => {
     const baseController = new BaseController('Recipe', recipeSchema)
-    const SELECTION = ['dine-in','take-out','delivery','skipDishes']
 
     const isRecipeNameExisted = async (recipeName) => {
         const recipe = await baseController.getData(baseController.getOneByCriteria, { name : recipeName })
@@ -83,6 +83,12 @@ export default () => {
         },    
 
         async updatePicture(req, res) {
+
+            if (!SELECTION.includes(req.body.selection)){
+                baseController.responseError(res, 250, 'Wrong selection, pls re-check!!!')
+                return
+            }
+
             const newPicture = {
                 selection: req.body.selection,
                 picLink: req.body.picLink,
@@ -96,34 +102,30 @@ export default () => {
 
                 const selectionList = []
                 // console.log('Before:', recipe.picLocation);
-                if (SELECTION.includes(newPicture.selection)){
-                    if (recipe.picLocation.length === 0){
-                        recipe.picLocation.push(newPicture)
-                    } else {
-                        recipe.picLocation.forEach(element => {
-                            if (element.selection === newPicture.selection) {
-                                element.picLink = newPicture.picLink
-                            }
-                            selectionList.push(element.selection)
-                        })
-    
-                        if (!selectionList.includes(newPicture.selection)) {
-                            recipe.picLocation.push(newPicture)
-                        }
-                    }
-    
-                    recipe.info = {
-                        ...recipe.info,
-                        updateOn: Date.now()
-                    }
-    
-                    // console.log('After:', recipe.picLocation);
-                    const {_id, ...rest} = recipe
-                    await baseController.responseData(res, baseController.update, {id:_id, newData: rest})
-                } else {
-                    baseController.responseError(res, 250, 'Wrong selection, pls re-check!!!')
-                }
                 
+                if (recipe.picLocation.length === 0){
+                    recipe.picLocation.push(newPicture)
+                } else {
+                    recipe.picLocation.forEach(element => {
+                        if (element.selection === newPicture.selection) {
+                            element.picLink = newPicture.picLink
+                        }
+                        selectionList.push(element.selection)
+                    })
+
+                    if (!selectionList.includes(newPicture.selection)) {
+                        recipe.picLocation.push(newPicture)
+                    }
+                }
+
+                recipe.info = {
+                    ...recipe.info,
+                    updateOn: Date.now()
+                }
+
+                // console.log('After:', recipe.picLocation);
+                const {_id, ...rest} = recipe
+                await baseController.responseData(res, baseController.update, {id:_id, newData: rest})
             }
         },
         

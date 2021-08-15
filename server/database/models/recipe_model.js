@@ -1,7 +1,6 @@
 import mongoose from 'mongoose'
+import { STATION } from '../../constants/db_constants.js'
 import general_info from './general_info.js'
-
-const STATION = ['sushi-bar', 'kitchen - deep fryer', 'kitchen - cooking']
 
 const recipeSchema = mongoose.Schema({
     name:{
